@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEON DASH — Pixel Runner</title>
+<title>NEO DASH — Pixel Runner</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -194,7 +194,7 @@
 
 <!-- HEADER -->
 <div id="header">
-  <div id="logo">NEON <span>DASH</span></div>
+  <div id="logo">NEO <span>DASH</span></div>
   <div id="header-right">
     <div id="user-greeting" style="display:none">▸ <span id="uname-disp"></span></div>
     <button class="btn yellow" onclick="openLB()">🏆 Classement</button>
@@ -208,7 +208,7 @@
   <canvas id="game-canvas" width="900" height="340"></canvas>
 
   <div class="overlay on" id="start-overlay">
-    <div id="start-title">NEON DASH</div>
+    <div id="start-title">NEO DASH</div>
     <div id="start-sub">◈ CYBER PIXEL RUNNER ◈</div>
     <div class="blink">— ESPACE / CLIC POUR COMMENCER —</div>
     <div class="hint">ESPACE ou CLIC → Sauter &nbsp;|&nbsp; Double saut disponible<br>Esquivez les obstacles, montez dans le classement !</div>
@@ -251,15 +251,15 @@
     <button class="modal-close" onclick="closeAuth()">✕</button>
     <div class="modal-title" id="auth-title">CONNEXION</div>
     <div id="form-login">
-      <div class="fg"><label>EMAIL</label><input id="l-email" type="email" placeholder="gamer@neondash.io" autocomplete="off"></div>
+      <div class="fg"><label>EMAIL</label><input id="l-email" type="email" placeholder="gamer@neodash.io" autocomplete="off"></div>
       <div class="fg"><label>MOT DE PASSE</label><input id="l-pass" type="password" placeholder="••••••"></div>
       <div class="form-btns"><button class="btn pink" onclick="doLogin()">SE CONNECTER</button></div>
       <div class="switch">Pas de compte ? <a onclick="showRegister()">S'inscrire</a></div>
       <div class="fmsg" id="l-msg"></div>
     </div>
     <div id="form-register" style="display:none">
-      <div class="fg"><label>PSEUDO (visible dans le classement)</label><input id="r-user" type="text" placeholder="NeonRunner42" maxlength="20" autocomplete="off"></div>
-      <div class="fg"><label>EMAIL</label><input id="r-email" type="email" placeholder="gamer@neondash.io" autocomplete="off"></div>
+      <div class="fg"><label>PSEUDO (visible dans le classement)</label><input id="r-user" type="text" placeholder="NeoRunner42" maxlength="20" autocomplete="off"></div>
+      <div class="fg"><label>EMAIL</label><input id="r-email" type="email" placeholder="gamer@neodash.io" autocomplete="off"></div>
       <div class="fg"><label>MOT DE PASSE (min. 6 caractères)</label><input id="r-pass" type="password" placeholder="••••••"></div>
       <div class="form-btns"><button class="btn" onclick="doRegister()">CRÉER MON COMPTE</button></div>
       <div class="switch">Déjà un compte ? <a onclick="showLogin()">Se connecter</a></div>
