@@ -9,6 +9,127 @@
     rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ── CLASSEMENT INLINE ── */
+    #inline-lb {
+      width: 900px;
+      max-width: 95vw;
+      margin: 0 auto 18px auto;
+      background: #080818;
+      border: 1px solid rgba(0, 255, 245, 0.15);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+    }
+
+    #inline-lb-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(0, 255, 245, 0.1);
+      color: #00fff5;
+      font-size: 9px;
+      text-shadow: 0 0 8px #00fff5;
+    }
+
+    #inline-lb-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .ilb-tab {
+      background: transparent;
+      border: 1px solid rgba(0, 255, 245, 0.25);
+      color: rgba(0, 255, 245, 0.5);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .ilb-tab:hover,
+    .ilb-tab.active {
+      border-color: #00fff5;
+      color: #00fff5;
+      background: rgba(0, 255, 245, 0.08);
+      text-shadow: 0 0 6px #00fff5;
+    }
+
+    #inline-lb-body {
+      padding: 8px 0;
+      min-height: 60px;
+    }
+
+    .ilb-loading,
+    .ilb-empty {
+      text-align: center;
+      color: rgba(0, 255, 245, 0.4);
+      padding: 16px;
+      font-size: 8px;
+    }
+
+    .ilb-table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #cccccc;
+    }
+
+    .ilb-table thead tr {
+      border-bottom: 1px solid rgba(0, 255, 245, 0.1);
+    }
+
+    .ilb-table th {
+      padding: 5px 14px;
+      color: rgba(0, 255, 245, 0.5);
+      font-size: 7px;
+      text-align: left;
+      font-weight: normal;
+    }
+
+    .ilb-table td {
+      padding: 6px 14px;
+      font-size: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .ilb-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ilb-table tr:hover td {
+      background: rgba(0, 255, 245, 0.03);
+    }
+
+    .ilb-rank {
+      color: rgba(0, 255, 245, 0.6);
+      width: 30px;
+    }
+
+    .ilb-score {
+      color: #ffe600;
+      text-shadow: 0 0 6px #ffe600;
+      text-align: right;
+    }
+
+    .ilb-me td {
+      color: #00ff88 !important;
+      text-shadow: 0 0 6px #00ff88;
+    }
+
+    .sk-special {
+      width: auto !important;
+      padding: 0 6px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0 !important;
+      letter-spacing: 0;
+    }
+  </style>
 </head>
 
 <body>
@@ -68,13 +189,31 @@
     <div class="sk" data-skin="green" style="background:#00ff88" title="Matrix Green"></div>
     <div class="sk" data-skin="yellow" style="background:#ffe600" title="Solar Yellow"></div>
     <div class="sk" data-skin="purple" style="background:#9d4edd" title="Void Purple"></div>
+    <div class="sk sk-special" data-skin="trump" style="background:#ff8c00;border-color:#ffcc00"
+      title="🇺🇸 The Donald">DT</div>
+    <div class="sk sk-special" data-skin="duce" style="background:#444422;border-color:#888844" title="🎖️ Il Duce">IL
+    </div>
     <div class="bar-sep"></div>
     <span class="bar-label">THÈME :</span>
     <button class="theme-btn active" data-theme="cyber" style="border-color:#00fff5;color:#00fff5">🌆 CYBER</button>
-    <button class="theme-btn" data-theme="industrial" style="border-color:#ff6600;color:#ff6600">🏭 INDUSTRIE</button>
     <button class="theme-btn" data-theme="desert" style="border-color:#ffaa00;color:#ffaa00">🏜️ DÉSERT</button>
     <button class="theme-btn" data-theme="underwater" style="border-color:#0088ff;color:#0088ff">🌊 ABYSSES</button>
     <button class="theme-btn" data-theme="ww2axis" style="border-color:#8b0000;color:#cc2200">⚔️ BLITZ</button>
+  </div>
+
+  <!-- CLASSEMENT INLINE -->
+  <div id="inline-lb">
+    <div id="inline-lb-header">
+      <span>🏆 CLASSEMENT EN DIRECT</span>
+      <div id="inline-lb-tabs">
+        <button class="ilb-tab active" onclick="switchInlineLb('week',this)">SEMAINE</button>
+        <button class="ilb-tab" onclick="switchInlineLb('all',this)">ALL TIME</button>
+        <button class="ilb-tab" onclick="switchInlineLb('today',this)">AUJOURD'HUI</button>
+      </div>
+    </div>
+    <div id="inline-lb-body">
+      <div class="ilb-loading">⏳ Chargement...</div>
+    </div>
   </div>
 
   <!-- AUTH MODAL -->
@@ -192,6 +331,34 @@
     let currentTheme = THEMES['cyber'];
 
     /* ============================================================
+       SYSTÈME DE PLUGINS THÈMES
+       Chaque fichier theme-XXX.js appelle registerTheme(key, def)
+       ============================================================ */
+    function registerTheme(key, def) {
+      THEMES[key] = def;
+      // Créer le bouton dans la bottom-bar s'il n'existe pas déjà
+      if (!document.querySelector('.theme-btn[data-theme="' + key + '"]')) {
+        const bar = document.getElementById('bottom-bar');
+        const btn = document.createElement('button');
+        btn.className = 'theme-btn';
+        btn.dataset.theme = key;
+        btn.textContent = def.name;
+        btn.style.borderColor = def.neonLine;
+        btn.style.color = def.neonLine;
+        btn.addEventListener('click', () => {
+          currentTheme = THEMES[key];
+          document.querySelectorAll('.theme-btn').forEach(x => x.classList.remove('active'));
+          btn.classList.add('active');
+          smokeParticles = [];
+          obstacles = [];
+          initBG();
+          notify('\uD83C\uDFA8 Th\u00E8me : ' + def.name);
+        });
+        bar.appendChild(btn);
+      }
+    }
+
+    /* ============================================================
        GAME CONFIG
        ============================================================ */
     const C = document.getElementById('game-canvas');
@@ -205,6 +372,8 @@
       green: { body: '#00ff88', dark: '#008844', trail: 'rgba(0,255,136,' },
       yellow: { body: '#ffe600', dark: '#806e00', trail: 'rgba(255,230,0,' },
       purple: { body: '#9d4edd', dark: '#4a1580', trail: 'rgba(157,78,221,' },
+      trump: { body: '#ff8c00', dark: '#cc6600', trail: 'rgba(255,140,0,' },
+      duce: { body: '#555533', dark: '#333322', trail: 'rgba(80,80,40,' },
     };
 
     const G = {
@@ -351,62 +520,130 @@
         ctx.beginPath(); ctx.arc(Math.floor(hx), GY, 90, Math.PI, 0); ctx.fill();
       }
 
-      // ── Camp de prisonniers (baraquements + miradors) ──
+      // ── Camp de prisonniers (baraquements + miradors + personnages) ──
       const campPositions = [120, 520, 950, 1380];
       campPositions.forEach((cp, ci) => {
         const cx = ((cp - sx * 0.30) % (W * 2.8) + W * 2.8) % (W * 2.8) - 80;
         if (cx > W + 120 || cx < -120) return;
+
+        // Sol du camp (terre battue)
+        ctx.fillStyle = '#110d05';
+        ctx.fillRect(Math.floor(cx), GY - 2, 110, 4);
+
         // Clôture barbelée du camp
         ctx.fillStyle = '#2a2010';
-        for (let pi = 0; pi < 6; pi++) {
-          ctx.fillRect(Math.floor(cx + pi * 18), GY - 22, 3, 22);
-          // Fil barbelé entre pieux
+        for (let pi = 0; pi < 7; pi++) {
+          ctx.fillRect(Math.floor(cx + pi * 16), GY - 26, 3, 26);
           ctx.strokeStyle = '#4a3a18'; ctx.lineWidth = 1;
-          if (pi < 5) {
-            [GY - 20, GY - 12].forEach(wy => {
+          if (pi < 6) {
+            [GY - 24, GY - 14].forEach(wy => {
               ctx.beginPath();
-              ctx.moveTo(cx + pi * 18 + 3, wy);
-              ctx.lineTo(cx + (pi + 1) * 18, wy);
+              ctx.moveTo(cx + pi * 16 + 3, wy);
+              ctx.lineTo(cx + (pi + 1) * 16, wy);
               ctx.stroke();
-              for (let bx = cx + pi * 18 + 3; bx < cx + (pi + 1) * 18; bx += 6) {
+              for (let bx = cx + pi * 16 + 3; bx < cx + (pi + 1) * 16; bx += 5) {
                 ctx.beginPath(); ctx.moveTo(bx, wy - 2); ctx.lineTo(bx + 3, wy + 2); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(bx + 2, wy + 2); ctx.lineTo(bx + 5, wy - 2); ctx.stroke();
               }
             });
           }
         }
-        // Baraquements (2 longues baraques)
-        [0, 40].forEach(by => {
+
+        // Baraquements
+        [0].forEach(by => {
           ctx.fillStyle = '#1e1808';
-          ctx.fillRect(Math.floor(cx + 8), GY - 55 - by, 78, 35);
-          // Toit
+          ctx.fillRect(Math.floor(cx + 4), GY - 52, 88, 28);
           ctx.fillStyle = '#141005';
-          ctx.fillRect(Math.floor(cx + 6), GY - 57 - by, 82, 5);
-          // Fenêtres grillées
-          for (let wi = 0; wi < 3; wi++) {
+          ctx.fillRect(Math.floor(cx + 2), GY - 55, 92, 5);
+          for (let wi = 0; wi < 4; wi++) {
             ctx.fillStyle = '#0a0806';
-            ctx.fillRect(Math.floor(cx + 16 + wi * 22), GY - 50 - by, 9, 8);
+            ctx.fillRect(Math.floor(cx + 10 + wi * 20), GY - 48, 8, 7);
             ctx.strokeStyle = '#2a2010'; ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(Math.floor(cx + 20 + wi * 22), GY - 50 - by);
-            ctx.lineTo(Math.floor(cx + 20 + wi * 22), GY - 42 - by);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(Math.floor(cx + 16 + wi * 22), GY - 46 - by);
-            ctx.lineTo(Math.floor(cx + 25 + wi * 22), GY - 46 - by);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(Math.floor(cx + 14 + wi * 20), GY - 48); ctx.lineTo(Math.floor(cx + 14 + wi * 20), GY - 41); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(Math.floor(cx + 10 + wi * 20), GY - 45); ctx.lineTo(Math.floor(cx + 18 + wi * 20), GY - 45); ctx.stroke();
           }
+          // Lumière intérieure (des gens dedans)
+          const innerGlow = 0.08 + 0.05 * Math.sin(G.frame * 0.04 + ci);
+          ctx.fillStyle = `rgba(255,180,60,${innerGlow})`;
+          ctx.fillRect(Math.floor(cx + 4), GY - 52, 88, 28);
         });
+
+        // ── PRISONNIERS (silhouettes sombres, courbées, vêtements rayés) ──
+        const prisonerOffsets = [8, 22, 36, 50, 64];
+        prisonerOffsets.forEach((po, pi2) => {
+          const px2 = Math.floor(cx + po);
+          const anim = Math.sin(G.frame * 0.03 + pi2 * 1.4); // légère oscillation fatigue
+          const py2 = GY - 2 + Math.floor(anim * 0.5);
+
+          // Corps rayé (prisonnier)
+          // Tête
+          ctx.fillStyle = '#3a2a18';
+          ctx.fillRect(px2 + 1, py2 - 20, 5, 5);
+          // Tronc rayé (alternance clair/sombre)
+          for (let ry = 0; ry < 7; ry++) {
+            ctx.fillStyle = ry % 2 === 0 ? '#2a2a2a' : '#4a4a4a';
+            ctx.fillRect(px2, py2 - 15 + ry, 7, 1);
+          }
+          // Bras (tombants, fatigués)
+          ctx.fillStyle = '#2a2a2a';
+          ctx.fillRect(px2 - 1, py2 - 13, 2, 5);
+          ctx.fillRect(px2 + 6, py2 - 13, 2, 5);
+          // Jambes
+          ctx.fillStyle = '#2a2a2a';
+          ctx.fillRect(px2 + 1, py2 - 8, 2, 8);
+          ctx.fillRect(px2 + 4, py2 - 8, 2, 8);
+          // Pieds
+          ctx.fillStyle = '#1a1008';
+          ctx.fillRect(px2, py2, 3, 2);
+          ctx.fillRect(px2 + 4, py2, 3, 2);
+        });
+
+        // ── GARDE ARMÉ (uniforme sombre, fusil) ──
+        const gx2 = Math.floor(cx + 96);
+        const gy2 = GY - 2;
+        // Casque
+        ctx.fillStyle = '#1a2010';
+        ctx.fillRect(gx2, gy2 - 26, 8, 4);
+        ctx.fillRect(gx2 + 1, gy2 - 30, 6, 5);
+        // Corps uniforme vert sombre
+        ctx.fillStyle = '#1a2010';
+        ctx.fillRect(gx2 + 1, gy2 - 22, 6, 10);
+        // Ceinture
+        ctx.fillStyle = '#0a0a08';
+        ctx.fillRect(gx2 + 1, gy2 - 13, 6, 2);
+        // Jambes
+        ctx.fillStyle = '#1a2010';
+        ctx.fillRect(gx2 + 1, gy2 - 11, 3, 11);
+        ctx.fillRect(gx2 + 4, gy2 - 11, 3, 11);
+        // Bottes
+        ctx.fillStyle = '#0a0806';
+        ctx.fillRect(gx2, gy2, 4, 2);
+        ctx.fillRect(gx2 + 4, gy2, 4, 2);
+        // Fusil (Karabiner 98k pixel)
+        ctx.fillStyle = '#2a1e0a';
+        ctx.fillRect(gx2 + 7, gy2 - 28, 2, 18); // crosse + canon
+        ctx.fillRect(gx2 + 8, gy2 - 30, 1, 4);  // canon dépassant
+        ctx.fillStyle = '#444422';
+        ctx.fillRect(gx2 + 8, gy2 - 28, 1, 14); // partie métal
+
         // Mirador de camp (coin)
         ctx.fillStyle = '#1e1a0a';
-        ctx.fillRect(Math.floor(cx + 88), GY - 70, 4, 70); // poteau
-        ctx.fillRect(Math.floor(cx + 82), GY - 70, 16, 18); // cabine
+        ctx.fillRect(Math.floor(cx + 100), GY - 72, 4, 72);
+        ctx.fillRect(Math.floor(cx + 94), GY - 72, 16, 20);
         ctx.fillStyle = '#111005';
-        ctx.fillRect(Math.floor(cx + 80), GY - 72, 20, 4);  // toit
-        // Lueur du projecteur
+        ctx.fillRect(Math.floor(cx + 92), GY - 74, 20, 4);
         const glw = 0.25 + 0.2 * Math.sin(G.frame * 0.07 + ci);
         ctx.fillStyle = `rgba(255,220,80,${glw})`;
-        ctx.fillRect(Math.floor(cx + 87), GY - 65, 7, 7);
+        ctx.fillRect(Math.floor(cx + 97), GY - 67, 7, 7);
+
+        // ── GARDE dans le mirador ──
+        ctx.fillStyle = '#1a2010';
+        ctx.fillRect(Math.floor(cx + 98), GY - 68, 5, 8);
+        ctx.fillStyle = '#1a2810';
+        ctx.fillRect(Math.floor(cx + 97), GY - 72, 6, 5);
+        // Canon du fusil qui dépasse du mirador
+        ctx.fillStyle = '#333322';
+        ctx.fillRect(Math.floor(cx + 104), GY - 67, 8, 2);
       });
 
       // ── Ruines de bâtiments bombardés ──
@@ -633,6 +870,10 @@
         list: mkBlds(cfg), sx: 0, spd: i === 0 ? 0.55 : 1.3, cfg,
       }));
       if (currentTheme === THEMES['ww2axis']) initWW2();
+      // Plugin hook: init
+      if (currentTheme.hooks && currentTheme.hooks.init) {
+        currentTheme.hooks.init(ctx, W, H, GY, G);
+      }
     }
 
     function mkBlds(cfg) {
@@ -675,6 +916,11 @@
 
       // Projecteurs DCA (derrière tout le reste)
       if (isWW2) drawWW2Searchlights();
+
+      // Hook plugin : dessin derrière (avant étoiles)
+      if (currentTheme.hooks && currentTheme.hooks.drawBehind) {
+        currentTheme.hooks.drawBehind();
+      }
 
       // Étoiles / braises
       stars.forEach(s => {
@@ -736,6 +982,11 @@
         drawWW2Planes();
       }
 
+      // Hook plugin : dessin devant (après sol)
+      if (currentTheme.hooks && currentTheme.hooks.drawFront) {
+        currentTheme.hooks.drawFront();
+      }
+
       // Ligne de sol néon
       ctx.shadowColor = T.neonLine;
       ctx.shadowBlur = 10;
@@ -756,23 +1007,8 @@
     /* ============================================================
        DRAW PLAYER
        ============================================================ */
-    function drawPlayer() {
-      const sk = SKINS[G.skin];
-      let px = Math.floor(P.x - P.w / 2);
-      let py = Math.floor(P.y - P.h);
-      const sc = 2;
-
-      P.trail.forEach((t, i) => {
-        let a = (i / P.trail.length) * .45;
-        ctx.fillStyle = sk.trail + a + ')';
-        ctx.fillRect(Math.floor(t.x - P.w / 2), Math.floor(t.y - P.h), P.w, P.h);
-      });
-
-      if (P.grounded) {
-        ctx.fillStyle = 'rgba(0,0,0,.35)';
-        ctx.fillRect(px + 5, GY + 2, P.w - 10, 5);
-      }
-
+    /* ── Sprite générique (skins couleur) ── */
+    function drawSpriteGeneric(px, py, sc, sk) {
       const sprite = [
         [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
         [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
@@ -794,10 +1030,7 @@
         [0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0],
         [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
       ];
-
       let leg = P.grounded ? Math.floor(G.frame / 5) % 4 : 2;
-      ctx.shadowBlur = 0;
-
       sprite.forEach((row, ry) => {
         row.forEach((cell, rx) => {
           if (!cell) return;
@@ -813,6 +1046,121 @@
           ctx.shadowBlur = 0;
         });
       });
+    }
+
+    /* ── Sprite TRUMP — costume bleu, cravate rouge, chevelure blonde ── */
+    function drawSpriteTrump(px, py, sc) {
+      const leg = P.grounded ? Math.floor(G.frame / 5) % 4 : 2;
+      // Couleurs
+      // 1=costume bleu marine, 2=peau orange, 3=cheveux blonds, 4=cravate rouge, 5=chemise blanche, 6=chaussures noires
+      const C = { 1: '#1a2550', 2: '#e8773a', 3: '#f5c842', 4: '#cc1111', 5: '#eeeeee', 6: '#111111' };
+      const S = [
+        //  0  1  2  3  4  5  6  7  8  9 10 11 12 13
+        [0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0], // 0  cheveux dessus
+        [0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0], // 1  cheveux
+        [0, 0, 3, 2, 2, 2, 2, 2, 2, 2, 3, 0, 0, 0], // 2  front (peau)
+        [0, 0, 2, 2, 6, 2, 2, 2, 6, 2, 2, 0, 0, 0], // 3  yeux (6=sombre)
+        [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0], // 4  nez/joues
+        [0, 0, 2, 2, 2, 4, 4, 4, 2, 2, 2, 0, 0, 0], // 5  bouche + début cravate
+        [0, 1, 1, 5, 5, 4, 5, 4, 5, 5, 1, 1, 0, 0], // 6  épaules + col + cravate
+        [0, 1, 1, 5, 5, 4, 5, 4, 5, 5, 1, 1, 0, 0], // 7  torse haut
+        [0, 1, 1, 1, 5, 4, 5, 4, 5, 1, 1, 1, 0, 0], // 8  torse milieu
+        [0, 1, 1, 1, 1, 4, 4, 4, 1, 1, 1, 1, 0, 0], // 9  torse bas (cravate large)
+        [0, 0, 1, 1, 1, 4, 4, 4, 1, 1, 1, 0, 0, 0], // 10 ventre
+        [0, 0, 1, 1, 1, 4, 0, 4, 1, 1, 1, 0, 0, 0], // 11 bas ventre (cravate longue)
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 12 jambes haut
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 13
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 14
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 15
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 16
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 17
+        [0, 0, 0, 6, 6, 0, 0, 0, 6, 6, 0, 0, 0, 0], // 18 chaussures
+      ];
+      ctx.shadowColor = '#ff8c00'; ctx.shadowBlur = 4;
+      S.forEach((row, ry) => {
+        row.forEach((cell, rx) => {
+          if (!cell) return;
+          let col = C[cell] || '#000';
+          // Animation jambes
+          if (ry >= 12 && ry <= 17 && P.grounded) {
+            const L = rx === 3 || rx === 4, R = rx === 8 || rx === 9;
+            if (L && leg % 2 === 1) col = '#141a3a';
+            if (R && leg % 2 === 0) col = '#141a3a';
+          }
+          ctx.fillStyle = col;
+          ctx.fillRect(px + rx * sc, py + ry * sc, sc, sc);
+        });
+      });
+      ctx.shadowBlur = 0;
+    }
+
+    /* ── Sprite IL DUCE — uniforme militaire, casquette, mâchoire proéminente ── */
+    function drawSpriteDuce(px, py, sc) {
+      const leg = P.grounded ? Math.floor(G.frame / 5) % 4 : 2;
+      // 1=uniforme kaki foncé, 2=peau, 3=casquette noire, 4=médailles or, 5=ceinture, 6=bottes, 7=moustache
+      const C = { 1: '#3a3a20', 2: '#c8a070', 3: '#1a1a0a', 4: '#ccaa00', 5: '#1a1008', 6: '#0e0c06', 7: '#111108' };
+      const S = [
+        //  0  1  2  3  4  5  6  7  8  9 10 11 12 13
+        [0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0], // 0  casquette plate
+        [0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0], // 1
+        [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0], // 2  bord casquette
+        [0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0], // 3  front
+        [0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0], // 4  yeux (pas de détail)
+        [0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0], // 5  nez + mâchoire carrée
+        [0, 0, 0, 2, 7, 7, 2, 7, 7, 2, 0, 0, 0, 0], // 6  moustache brosse
+        [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0], // 7  col
+        [0, 1, 1, 1, 4, 1, 1, 1, 4, 1, 1, 1, 0, 0], // 8  épaules + médailles
+        [0, 1, 1, 1, 4, 1, 1, 1, 4, 1, 1, 1, 0, 0], // 9
+        [0, 0, 1, 1, 1, 5, 5, 5, 1, 1, 1, 0, 0, 0], // 10 ceinture
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], // 11
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 12 jambes
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 13
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 14
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 15
+        [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0], // 16
+        [0, 0, 0, 6, 6, 0, 0, 0, 6, 6, 0, 0, 0, 0], // 17 bottes
+        [0, 0, 0, 6, 6, 6, 0, 6, 6, 6, 0, 0, 0, 0], // 18 semelles
+      ];
+      ctx.shadowColor = '#888844'; ctx.shadowBlur = 4;
+      S.forEach((row, ry) => {
+        row.forEach((cell, rx) => {
+          if (!cell) return;
+          let col = C[cell] || '#000';
+          if (ry >= 12 && ry <= 16 && P.grounded) {
+            const L = rx === 3 || rx === 4, R = rx === 8 || rx === 9;
+            if (L && leg % 2 === 1) col = '#252514';
+            if (R && leg % 2 === 0) col = '#252514';
+          }
+          ctx.fillStyle = col;
+          ctx.fillRect(px + rx * sc, py + ry * sc, sc, sc);
+        });
+      });
+      ctx.shadowBlur = 0;
+    }
+
+    function drawPlayer() {
+      const sk = SKINS[G.skin];
+      let px = Math.floor(P.x - P.w / 2);
+      let py = Math.floor(P.y - P.h);
+      const sc = 2;
+
+      // Traînée
+      P.trail.forEach((t, i) => {
+        let a = (i / P.trail.length) * .45;
+        ctx.fillStyle = sk.trail + a + ')';
+        ctx.fillRect(Math.floor(t.x - P.w / 2), Math.floor(t.y - P.h), P.w, P.h);
+      });
+
+      // Ombre au sol
+      if (P.grounded) {
+        ctx.fillStyle = 'rgba(0,0,0,.35)';
+        ctx.fillRect(px + 5, GY + 2, P.w - 10, 5);
+      }
+
+      // Dispatch vers le bon sprite
+      if (G.skin === 'trump') drawSpriteTrump(px, py, sc);
+      else if (G.skin === 'duce') drawSpriteDuce(px, py, sc);
+      else drawSpriteGeneric(px, py, sc, sk);
     }
 
     /* ============================================================
@@ -1114,7 +1462,9 @@
     ];
 
     function getObstTypes() {
-      return currentTheme === THEMES['ww2axis'] ? OBSTYPES_WW2 : OBSTYPES;
+      if (currentTheme.obstTypes) return currentTheme.obstTypes;
+      if (currentTheme === THEMES['ww2axis']) return OBSTYPES_WW2;
+      return OBSTYPES;
     }
 
     function spawnObst() {
@@ -1166,6 +1516,10 @@
 
       // Mise à jour terrain WW2
       if (currentTheme === THEMES['ww2axis']) updateWW2();
+      // Hook plugin : update
+      if (currentTheme.hooks && currentTheme.hooks.update) {
+        currentTheme.hooks.update();
+      }
 
       // Fumée
       smokeParticles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
@@ -1236,6 +1590,10 @@
       document.getElementById('sc-score').textContent = '0';
       document.getElementById('sc-combo').textContent = 'x1';
       if (currentTheme === THEMES['ww2axis']) initWW2();
+      // Plugin hook: init
+      if (currentTheme.hooks && currentTheme.hooks.init) {
+        currentTheme.hooks.init(ctx, W, H, GY, G);
+      }
     }
 
     function restartGame() { startGame(); }
@@ -1426,9 +1784,57 @@
        ============================================================ */
     initBG();
     restoreSession();
+
+    /* ============================================================
+       CLASSEMENT INLINE
+       ============================================================ */
+    let inlineLbTab = 'week';
+
+    async function renderInlineLB(tab) {
+      const wrap = document.getElementById('inline-lb-body');
+      wrap.innerHTML = '<div class="ilb-loading">⏳ Chargement...</div>';
+      let query = sb.from('scores').select('username, score, skin, created_at');
+      const now = new Date();
+      if (tab === 'week') query = query.gte('created_at', new Date(now - 7 * 864e5).toISOString());
+      if (tab === 'today') query = query.gte('created_at', new Date(now - 864e5).toISOString());
+      const { data, error } = await query.order('score', { ascending: false });
+      if (error) { wrap.innerHTML = '<div class="ilb-empty">❌ Erreur</div>'; return; }
+      if (!data || !data.length) { wrap.innerHTML = '<div class="ilb-empty">Aucun score — soyez le premier !</div>'; return; }
+      const bests = {};
+      data.forEach(s => { if (!bests[s.username] || s.score > bests[s.username].score) bests[s.username] = s; });
+      const sorted = Object.values(bests).sort((a, b) => b.score - a.score).slice(0, 10);
+      const medals = ['🥇', '🥈', '🥉'];
+      const SC = { cyan: '#00fff5', pink: '#ff006e', green: '#00ff88', yellow: '#ffe600', purple: '#9d4edd' };
+      let html = '<table class="ilb-table"><thead><tr><th>#</th><th>JOUEUR</th><th>SCORE</th><th></th></tr></thead><tbody>';
+      sorted.forEach((s, i) => {
+        const c = SC[s.skin] || '#00fff5';
+        const me = G.username && s.username === G.username ? ' class="ilb-me"' : '';
+        const pos = medals[i] || (i + 1);
+        html += `<tr${me}><td class="ilb-rank">${pos}</td><td>${s.username}${G.username === s.username ? ' ◀' : ''}</td><td class="ilb-score">${s.score.toLocaleString()}</td><td><div style="width:10px;height:10px;background:${c};display:inline-block;box-shadow:0 0 4px ${c}"></div></td></tr>`;
+      });
+      wrap.innerHTML = html + '</tbody></table>';
+    }
+
+    function switchInlineLb(tab, el) {
+      inlineLbTab = tab;
+      document.querySelectorAll('.ilb-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      renderInlineLB(tab);
+    }
+
+    // Auto-refresh toutes les 30 secondes
+    setInterval(() => renderInlineLB(inlineLbTab), 30000);
+
     function loop() { if (G.running) update(); render(); requestAnimationFrame(loop); }
     loop();
   </script>
+  <script src="theme-underwater.js"></script>
+  <script src="theme-volcano.js"></script>
+
+  <script src="theme-cyber.js"></script>
+  <script src="theme-underwater.js"></script>
+  <script src="theme-volcano.js"></script>
+</body>
 </body>
 
 </html>
